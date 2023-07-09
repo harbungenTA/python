@@ -1,0 +1,90 @@
+import ctypes
+import sys
+import webbrowser
+import time
+
+import bs4
+import keyboard
+import requests
+from requests_negotiate_sspi import HttpNegotiateAuth
+from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
+from selenium.webdriver.remote.webdriver import WebDriver
+
+
+def is_admin():
+    try:
+
+        return ctypes.windll.shell32.IsUserAnAdmin()
+    except:
+        return False
+
+
+def pause():
+    while True:
+
+        if keyboard.read_key() == 'NumLock':
+            break
+
+
+if is_admin():
+    url = 'http://********/*********'
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument(
+        "user-agent: Mozilla/5.0 (Windows NT 10.0; WOW32) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36")
+    driverPath = "C:\python\chromdriver\chromedriver.exe"
+    driverPathChrome = "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
+    driver = webdriver.Chrome(options=chrome_options, executable_path=driverPath)
+    driver.get(url)
+    print(driver.page_source)
+
+    def attach_to_session(executor_url, session_id):
+        original_execute = WebDriver.execute
+
+        def new_command_execute(self, command, params=None):
+            if command == "newSession":
+                # Mock the response
+                return {'success': 0, 'value': None, 'sessionId': session_id}
+            else:
+                return original_execute(self, command, params)
+
+        WebDriver.execute = new_command_execute
+        driverm = webdriver.Remote(command_executor=executor_url, desired_capabilities={})
+        driverm.session_id = session_id
+        WebDriver.execute = original_execute
+        return driverm
+
+    bro = attach_to_session(driver.command_executor._url, driver.session_id)
+    bro.get(url)
+    print(bro.page_source)
+    pause()
+     with open("output.txt", "a") as f:
+         chrome_path = 'C:/Program Files (x86)/Google/Chrome/Application/chrome.exe %s'
+         webbrowser.get(chrome_path).open(url)
+         session = requests.Session()
+         headers = {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win32; x32) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.100.0',
+                                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+                                    'Accept-Language': 'pl-PL,pl;q=0.9,en-US;q=0.8,en;q=0.7',
+                                    'Connection': 'keep-alive',
+                                    'Content-Length': '0',
+                                    'Origin': 'http://*******',
+                                    'Referer': 'http://*******/**********',
+                                    'X-Requested-With': 'XMLHttpRequest'}
+         getUrl = 'http://*******/***********'
+         print(session)
+         response = session.get(getUrl, auth=(HttpNegotiateAuth()), headers=headers)
+         print("Req output:")
+         print(response.text)
+         pause()
+         soup = bs4.BeautifulSoup(response.text, 'html.parser')
+         s = soup.find('span', attr={'parentElement': 'td'})
+         print(s)
+         print(soup)
+         pause()
+else:
+    ctypes.windll.shell32.ShellExecuteW(None, "runas", sys.executable, __file__, None, 1)
+    print("press enter")
+    pause()
